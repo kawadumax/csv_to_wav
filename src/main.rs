@@ -1,6 +1,6 @@
 use csv_to_wav::CSVtoWAV;
 fn main() -> std::io::Result<()> {
-    CSVtoWAV::transform()
+    CSVtoWAV::new().transform()
 }
 
 #[cfg(test)]
