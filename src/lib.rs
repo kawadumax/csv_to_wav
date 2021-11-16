@@ -95,6 +95,7 @@ mod tests {
     }
 
     #[test]
+    /// テスト用関数だけど、同時にCSV生成用の関数。
     fn generate_sine_csv() -> std::io::Result<()> {
         // create a file called data.csv, overwriting the file if it already existed
         // let mut csv = std::fs::File::create("csv/sine_data.csv");
@@ -110,17 +111,14 @@ mod tests {
     }
 
     #[test]
+    ///CSVから適切にWAVに変換できるかどうかというもの。入力用のCSVには`generate_sine_csv`を想定しています。
     fn generate_sine_wav_from_csv() -> std::io::Result<()> {
         let mut rdr = csv::ReaderBuilder::new().from_path("csv/sine_data.csv")?;
         let mut raw_data = Vec::with_capacity(44100);
         for result in rdr.records() {
             let record = result.expect("a CSV record");
-            // stringRecordをi16に変換したい
-            // dbg!(record.to_owned());
             let record = record.get(0).unwrap();
-            // dbg!(record);
             let sine_data: f32 = record.parse().unwrap();
-
             raw_data.push(sine_data as i16);
         }
         let data: wav::BitDepth = wav::BitDepth::Sixteen(raw_data);
