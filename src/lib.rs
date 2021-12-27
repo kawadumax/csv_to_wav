@@ -1,4 +1,4 @@
-use std::io::SeekFrom;
+use std::{io::SeekFrom, ops::Deref};
 
 use wav::BitDepth;
 
@@ -13,13 +13,27 @@ struct WAVManager {
 }
 
 impl CSVManager {
-    fn extract_data(&self) {
+    fn extract_data(&mut self) {
+        println!("Extract price data from CSV");
+        // // catでデータを直接読み込む場合
+        // let mut rdr = csv::ReaderBuilder::new()
+        //     .has_headers(false)
+        //     .from_reader(std::io::stdin());
         let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(std::io::stdin());
+            .from_path("csv/bitstampUSD.csv")
+            .unwrap();
+        // let mut pos = csv::Position::new();
+        let mut line_num;
         for result in rdr.records() {
             let record = result.expect("a CSV record");
-            // self.data.push(record)
+            // pos = record.position().clone();
+            line_num = record.position().unwrap().line();
+            if line_num % 10000 == 0 {
+                println!("{}", line_num)
+            }
+            let record = record.get(1).unwrap();
+            let data: f32 = record.parse().unwrap();
+            self.data.push(data as i16)
         }
     }
 }
@@ -62,7 +76,7 @@ impl CSVtoWAV {
             },
         }
     }
-    pub fn transform(self) -> std::io::Result<()> {
+    pub fn transform(mut self) -> std::io::Result<()> {
         self.csv_manager.extract_data();
         let raw_data = self.csv_manager.data;
         self.wav_manager.generate_wav(raw_data)
