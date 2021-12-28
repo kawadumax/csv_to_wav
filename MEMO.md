@@ -67,3 +67,8 @@ flac --delete-input-file -w abc.wav
 [波形](/img/1227-outputの波形.png)
 
 とりあえず正規化して書き出して、高度にコンセプチュアルなsuper low frequency oscとして使えるってことでNFTに出すか
+
+# 2021-1228
+正規化関数書き中です
+関数かいた
+i16Min - i16MAXまでマッピングできました。いったんこれでNFT出そう

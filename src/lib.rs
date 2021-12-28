@@ -1,9 +1,9 @@
+use chrono::{Date, Local};
 use std::{io::SeekFrom, ops::Deref};
-
 use wav::BitDepth;
 
 struct CSVManager {
-    data: Vec<i16>,
+    data: Vec<i32>,
 }
 
 struct WAVManager {
@@ -22,18 +22,17 @@ impl CSVManager {
         let mut rdr = csv::ReaderBuilder::new()
             .from_path("csv/bitstampUSD.csv")
             .unwrap();
-        // let mut pos = csv::Position::new();
         let mut line_num;
         for result in rdr.records() {
             let record = result.expect("a CSV record");
-            // pos = record.position().clone();
             line_num = record.position().unwrap().line();
-            if line_num % 10000 == 0 {
+            if line_num % 100000 == 0 {
                 println!("{}", line_num)
             }
             let record = record.get(1).unwrap();
             let data: f32 = record.parse().unwrap();
-            self.data.push(data as i16)
+            self.data.push(data as i32)
+            // self.data.push(data)
         }
     }
 }
@@ -51,8 +50,9 @@ impl WAVManager {
             self.bits_per_sample,
         );
         let data: wav::BitDepth = wav::BitDepth::Sixteen(raw_data);
-        let mut out_file =
-            File::create(Path::new("wav/output.wav")).expect("Unable to create file");
+        // let date = chrono::Local::today();
+        // let path = format!("wav/{}output.wav", date.to_string());
+        let mut out_file = File::create(Path::new("output.wav")).expect("Unable to create file");
         wav::write(header, &data, &mut out_file).expect("Unable to write file");
         Ok(())
     }
@@ -79,7 +79,22 @@ impl CSVtoWAV {
     pub fn transform(mut self) -> std::io::Result<()> {
         self.csv_manager.extract_data();
         let raw_data = self.csv_manager.data;
-        self.wav_manager.generate_wav(raw_data)
+        self.wav_manager.generate_wav(Self::normalize(raw_data))
+    }
+    // raw_dataをwavの許す範囲に正規化する
+    // raw_dataの最大値Max、最小値Minを、i16bitの最大値16BitMaxと最小値16BitMinにマッピングする
+    // f(x) = (i16::MAX - i16::MIN)/(Max - Min)(x - Max) + i16::MAX
+    fn normalize(raw_data: Vec<i32>) -> Vec<i16> {
+        let min = *raw_data.iter().min().unwrap();
+        let max = *raw_data.iter().max().unwrap();
+        println!("start normalize");
+        raw_data
+            .iter()
+            .map(|x| {
+                ((i16::MAX as i32 - i16::MIN as i32) / (max - min) * (x - max) + i16::MAX as i32)
+                    as i16
+            })
+            .collect()
     }
 }
 
